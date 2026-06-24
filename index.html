@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>周邊神經病變與皮膚毒性照護測驗</title>
+<style>
+  :root {
+    --bg-top: #E9F3FB;
+    --bg-bottom: #FCF1DE;
+    --navy: #1F3A5C;
+    --navy-soft: #3E5B7C;
+    --teal: #3E7CA6;
+    --teal-dark: #2C5C80;
+    --coral: #E2725B;
+    --coral-soft: #FBE3DD;
+    --green: #3F9C74;
+    --green-soft: #E1F3EA;
+    --amber: #D89A3A;
+    --amber-soft: #FBEFDA;
+    --card: #FFFFFF;
+    --line: #E3E0D6;
+    --radius: 18px;
+    --shadow: 0 10px 30px -12px rgba(31,58,92,0.25);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Heiti TC", "Noto Sans TC", sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, var(--bg-top) 0%, var(--bg-top) 38%, var(--bg-bottom) 100%);
+    color: var(--navy);
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 760px; margin: 0 auto; padding: 28px 20px 60px; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── Topbar ── */
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .topbar svg { flex-shrink: 0; }
+  .topbar h1 { font-size: clamp(17px, 4vw, 21px); font-weight: 800; margin: 0; line-height: 1.3; letter-spacing: .2px; }
+  .topbar p { margin: 2px 0 0; font-size: 13px; color: var(--navy-soft); }
+
+  main { flex: 1; }
+  .screen { display: none; animation: fadeIn .35s ease; }
+  .screen.active { display: block; }
+  @media (prefers-reduced-motion: reduce) { .screen { animation: none; } * { transition: none !important; } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 28px 26px; }
+  .lead { font-size: 14.5px; color: var(--navy-soft); line-height: 1.7; margin: 0 0 22px; }
+
+  /* ── Form fields ── */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line);
+    font-size: 15px; background: #FBFAF7; color: var(--navy); outline: none;
+  }
+  .field input:focus-visible { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(62,124,166,.18); }
+  .err { color: var(--coral); font-size: 12.5px; margin-top: 6px; min-height: 16px; }
+
+  /* ── Buttons ── */
+  .btn {
+    appearance: none; border: none; cursor: pointer; border-radius: 12px; font-weight: 700;
+    font-size: 15px; padding: 13px 22px; transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn:focus-visible { outline: 3px solid rgba(62,124,166,.45); outline-offset: 2px; }
+  .btn:active { transform: scale(.98); }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: var(--teal-dark); }
+  .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--navy-soft); border: 1.5px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--teal); color: var(--teal-dark); }
+  .btn-row { display: flex; gap: 10px; margin-top: 22px; justify-content: space-between; }
+  .btn-row .spacer { flex: 1; }
+
+  /* ── Progress trail ── */
+  .trail-row { display: flex; align-items: center; margin-bottom: 22px; }
+  .trail-row .seg { flex: 1; height: 3px; background: var(--line); }
+  .trail-row .seg.done { background: var(--teal); }
+  .node-wrap { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .node {
+    width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2.5px solid var(--line);
+    display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: var(--navy-soft);
+  }
+  .node.done { border-color: var(--teal); background: var(--teal); color: #fff; }
+  .node.current { border-color: var(--coral); box-shadow: 0 0 0 4px rgba(226,114,91,.18); color: var(--coral); }
+
+  /* ── Badges ── */
+  .badge { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: .3px; }
+  .badge-easy { background: var(--green-soft); color: var(--green); }
+  .badge-medium { background: var(--amber-soft); color: var(--amber); }
+  .badge-hard { background: var(--coral-soft); color: var(--coral); }
+  .badge-cat { background: #EEF3F8; color: var(--navy-soft); margin-left: 6px; }
+
+  /* ── Question ── */
+  .qhead { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .qnum { font-size: 13px; color: var(--navy-soft); font-weight: 700; }
+  .qtext { font-size: 17px; font-weight: 700; line-height: 1.6; margin: 0 0 18px; }
+
+  /* ── Options ── */
+  .opt {
+    display: flex; align-items: flex-start; gap: 10px; width: 100%; text-align: left;
+    background: #FBFAF7; border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 13px 14px; margin-bottom: 10px; cursor: pointer; font-size: 14.5px; line-height: 1.55; color: var(--navy);
+  }
+  .opt:hover { border-color: var(--teal); }
+  .opt.selected { border-color: var(--teal); background: #EAF3F9; font-weight: 700; }
+  .opt .tag {
+    flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--line); color: var(--navy-soft);
+    font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  }
+  .opt.selected .tag { background: var(--teal); color: #fff; }
+
+  /* ── Submitting state ── */
+  .submitting-overlay {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 48px 24px; gap: 16px; text-align: center;
+  }
+  .spinner {
+    width: 40px; height: 40px; border: 3.5px solid var(--line);
+    border-top-color: var(--teal); border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .submitting-msg { font-size: 15px; color: var(--navy-soft); font-weight: 600; }
+
+  /* ── Result ── */
+  .result-hero { text-align: center; padding: 8px 0 20px; }
+  .result-score { font-size: 52px; font-weight: 800; color: var(--navy); margin: 0; }
+  .result-score span { font-size: 22px; color: var(--navy-soft); font-weight: 700; }
+  .result-pass { display: inline-block; margin-top: 10px; padding: 6px 16px; border-radius: 999px; font-weight: 800; font-size: 13px; }
+  .pass-yes { background: var(--green-soft); color: var(--green); }
+  .pass-no { background: var(--coral-soft); color: var(--coral); }
+  .result-meta { font-size: 12.5px; color: var(--navy-soft); margin-top: 8px; }
+
+  /* ── Review ── */
+  .review-item { border-top: 1px solid var(--line); padding: 16px 0; }
+  .review-item:first-of-type { border-top: none; }
+  .review-q { font-weight: 700; font-size: 14.5px; margin: 0 0 8px; display: flex; gap: 8px; align-items: flex-start; }
+  .review-q .ic { flex-shrink: 0; font-size: 15px; }
+  .review-detail { font-size: 13.5px; color: var(--navy-soft); line-height: 1.7; padding-left: 23px; }
+  .review-detail b { color: var(--navy); }
+  .explain { margin-top: 6px; background: #F6F8F6; border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--navy-soft); }
+
+  /* ── Error screen ── */
+  .error-box { text-align: center; padding: 32px 16px; }
+  .error-box .icon { font-size: 40px; margin-bottom: 12px; }
+  .error-box p { color: var(--navy-soft); font-size: 14px; line-height: 1.7; margin: 0 0 20px; }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--navy); color: #fff; padding: 10px 18px; border-radius: 999px;
+    font-size: 13px; z-index: 60; box-shadow: var(--shadow);
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 20px 16px; }
+    .qtext { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <svg width="38" height="38" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+      <circle cx="19" cy="19" r="18" stroke="#3E7CA6" stroke-width="1.5"/>
+      <circle cx="19" cy="19" r="3.5" fill="#3E7CA6"/>
+      <path d="M19 15.5V8M19 22.5V30M22.5 19H30M15.5 19H8M21.5 16.5L26.5 11.5M16.5 21.5L11.5 26.5M21.5 21.5L26.5 26.5M16.5 16.5L11.5 11.5" stroke="#E2725B" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <h1>周邊神經病變與皮膚毒性照護測驗</h1>
+      <p>依教學單元內容設計・共 10 題・由簡入難</p>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ①開始畫面 -->
+    <section id="screen-start" class="screen active">
+      <div class="card">
+        <p class="lead">本測驗涵蓋化療引起周邊神經病變 (CIPN)、手足症候群、皮膚毒性與甲溝炎之機轉、分級與照護重點，共 10 題，請依序作答。完成後將顯示成績與詳解，並自動記錄至系統。</p>
+        <div class="field">
+          <label for="inp-name">姓名</label>
+          <input id="inp-name" type="text" placeholder="請輸入姓名" autocomplete="off" maxlength="20">
+        </div>
+        <div class="field">
+          <label for="inp-id">人事號</label>
+          <input id="inp-id" type="text" placeholder="請輸入人事號" autocomplete="off" maxlength="20">
+        </div>
+        <div id="start-err" class="err" role="alert"></div>
+        <button class="btn btn-primary" id="btn-start" style="width:100%">開始測驗</button>
+      </div>
+    </section>
+
+    <!-- ②測驗畫面 -->
+    <section id="screen-quiz" class="screen">
+      <div class="card">
+        <div class="trail-row" id="trail" role="progressbar" aria-label="答題進度"></div>
+        <div class="qhead">
+          <span class="qnum" id="q-counter"></span>
+          <span class="badge" id="q-diff"></span>
+          <span class="badge badge-cat" id="q-cat"></span>
+        </div>
+        <p class="qtext" id="q-text"></p>
+        <div id="q-options" role="radiogroup" aria-labelledby="q-text"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-prev">上一題</button>
+          <div class="spacer"></div>
+          <button class="btn btn-primary" id="btn-next" disabled>下一題</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③送出中畫面 -->
+    <section id="screen-submitting" class="screen">
+      <div class="card">
+        <div class="submitting-overlay">
+          <div class="spinner" aria-hidden="true"></div>
+          <p class="submitting-msg">正在計算成績並記錄…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ④結果畫面 -->
+    <section id="screen-result" class="screen">
+      <div class="card">
+        <div class="result-hero">
+          <p class="result-score" id="res-score">0<span>/10</span></p>
+          <span class="result-pass" id="res-pass"></span>
+          <p class="result-meta" id="res-meta"></p>
+        </div>
+        <div id="res-review"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-restart">重新測驗</button>
+          <div class="spacer"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ⑤錯誤畫面 -->
+    <section id="screen-error" class="screen">
+      <div class="card">
+        <div class="error-box">
+          <div class="icon">⚠️</div>
+          <p id="error-msg">提交成績時發生問題，請確認網路連線後再試。</p>
+          <button class="btn btn-primary" id="btn-retry">重試提交</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+// ============================================================
+//  ⚠️  請將下方 YOUR_APPS_SCRIPT_WEB_APP_URL 替換為
+//      您部署後取得的 Google Apps Script Web App 網址
+// ============================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKpODbUrgqJwqjOj6Inr6SZMvJ6-XEgrK3gqtIbnzV8an_EI0Xy5MPD6ZosD2m7jI2wQ/exec';
+
+// ============================================================
+//  題目資料（僅含題目與選項，不含答案）
+// ============================================================
+const QUESTIONS = [
+  {
+    id: 'q1', difficulty: '簡單', cat: 'CIPN機轉',
+    text: '下列藥物中，何者「非」常見引起化療引起周邊神經病變(CIPN)的神經毒性藥物？',
+    options: ['Paclitaxel', 'Oxaliplatin', 'Vincristine', 'Trastuzumab']
+  },
+  {
+    id: 'q2', difficulty: '困難', cat: 'CIPN症狀',
+    text: 'CIPN影響自主神經系統時，下列哪一種藥物最常合併出現姿勢性低血壓(postural hypotension)？',
+    options: ['Paclitaxel', 'Oxaliplatin', 'Thalidomide', 'Cisplatin']
+  },
+  {
+    id: 'q3', difficulty: '困難', cat: 'CIPN分級',
+    text: '關於CIPN之分級與診斷，下列敘述何者錯誤？',
+    options: [
+      '主要分級工具為NCI-CTCAE評分',
+      '第1級症狀輕微，通常不需特定治療',
+      '第2至3級屬中度至重度，會影響日常生活與自我照顧能力',
+      '診斷可完全依賴影像學檢查確診，不需病史或床邊感覺測試'
+    ]
+  },
+  {
+    id: 'q4', difficulty: '中等', cat: 'CIPN機轉',
+    text: '下列哪一種化療藥物具有「特異性冷刺激過敏」現象，使患者接觸冷物或冷飲時誘發症狀加劇？',
+    options: ['Paclitaxel(紫杉醇)', 'Oxaliplatin(鉑類)', 'Vincristine', 'Cisplatin']
+  },
+  {
+    id: 'q5', difficulty: '中等', cat: 'CIPN處置',
+    text: 'CIPN目前臨床推薦的一線疼痛控制用藥為？',
+    options: ['Ibuprofen', 'Duloxetine', 'Morphine', 'Acetaminophen']
+  },
+  {
+    id: 'q6', difficulty: '中等', cat: '手足症候群',
+    text: '關於化療誘發手足症候群(HFS)與標靶藥物誘發(HFSR)的表現差異，下列何者正確？',
+    options: [
+      'HFS好發於壓力點伴隨過度角化與潰瘍，HFSR為對稱性紅斑腫脹',
+      'HFSR好發於壓力點伴隨過度角化、水泡及潰瘍，HFS則為對稱性紅斑、腫脹、脫皮',
+      '兩者臨床表現完全相同，無法區分',
+      'HFS僅發生於足部，HFSR僅發生於手部'
+    ]
+  },
+  {
+    id: 'q7', difficulty: '困難', cat: '皮膚毒性分級',
+    text: '評估皮膚毒性嚴重度依體表面積(BSA)分級時，1% BSA約相當於多大面積？',
+    options: ['一個手掌大小', '一個拳頭大小', '整個前臂', '整個軀幹']
+  },
+  {
+    id: 'q8', difficulty: '困難', cat: 'EGFR皮膚毒性',
+    text: 'EGFR抑制劑引起的皮膚毒性，少數情況下可能出現的致命性反應為何？',
+    options: ['蕁麻疹', 'Stevens-Johnson症候群', '異位性皮膚炎', '接觸性皮膚炎']
+  },
+  {
+    id: 'q9', difficulty: '困難', cat: '護理照護',
+    text: '關於化療相關周邊神經病變、手足症候群及皮膚毒性之日常護理照護原則，下列何者錯誤？',
+    options: [
+      '洗澡水溫應避免過高，並避免長時間浸泡溫泉或泡湯',
+      '皮膚乾燥時可加強塗抹無香料、高滋潤之乳液保濕',
+      '為加強保暖與支撐，建議睡前以彈性繃帶緊束包覆雙腳',
+      '應穿著寬鬆、柔軟、有支撐力的棉襪及軟底鞋，並定期檢查手腳皮膚完整性'
+    ]
+  },
+  {
+    id: 'q10', difficulty: '困難', cat: '甲溝炎處置',
+    text: '標靶藥物引起的甲溝炎(Paronychia)達Grade 2（有分泌物/指甲床分離）時，建議處置為？',
+    options: [
+      '僅須局部抗生素藥膏，無須調整標靶藥物',
+      '口服抗生素一週，並局部使用20%硝酸銀滴劑，必要時拔除部分指甲',
+      '立即永久停藥並住院治療',
+      '不需任何治療，會自然痊癒'
+    ]
+  }
+];
+
+// ============================================================
+//  狀態
+// ============================================================
+let state = {
+  name: '', employeeId: '',
+  idx: 0,
+  answers: new Array(QUESTIONS.length).fill(null),
+  startTime: null,
+  lastPayload: null  // 供重試使用
+};
+
+// ============================================================
+//  工具函式
+// ============================================================
+const $ = sel => document.querySelector(sel);
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ============================================================
+//  開始畫面
+// ============================================================
+$('#btn-start').addEventListener('click', () => {
+  const name = $('#inp-name').value.trim();
+  const employeeId = $('#inp-id').value.trim();
+  const err = $('#start-err');
+  if (!name || !employeeId) {
+    err.textContent = '請輸入姓名與人事號後再開始測驗。';
+    return;
+  }
+  err.textContent = '';
+  state.name = name;
+  state.employeeId = employeeId;
+  state.idx = 0;
+  state.answers = new Array(QUESTIONS.length).fill(null);
+  state.startTime = Date.now();
+  renderQuestion();
+  showScreen('screen-quiz');
+});
+
+$('#inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') $('#inp-id').focus(); });
+$('#inp-id').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btn-start').click(); });
+
+// ============================================================
+//  進度條
+// ============================================================
+function renderTrail() {
+  const wrap = $('#trail');
+  let html = '';
+  QUESTIONS.forEach((_, i) => {
+    const cls = i < state.idx ? 'done' : (i === state.idx ? 'current' : '');
+    html += `<div class="node-wrap"><div class="node ${cls}" aria-label="第${i+1}題">${i + 1}</div></div>`;
+    if (i < QUESTIONS.length - 1) {
+      html += `<div class="seg ${i < state.idx ? 'done' : ''}"></div>`;
+    }
+  });
+  wrap.innerHTML = html;
+}
+
+// ============================================================
+//  測驗畫面
+// ============================================================
+function renderQuestion() {
+  const q = QUESTIONS[state.idx];
+  renderTrail();
+  $('#q-counter').textContent = `第 ${state.idx + 1} / ${QUESTIONS.length} 題`;
+  const diffClass = q.difficulty === '簡單' ? 'badge-easy' : (q.difficulty === '中等' ? 'badge-medium' : 'badge-hard');
+  $('#q-diff').className = `badge ${diffClass}`;
+  $('#q-diff').textContent = q.difficulty;
+  $('#q-cat').textContent = q.cat;
+  $('#q-text').textContent = q.text;
+
+  const optWrap = $('#q-options');
+  optWrap.innerHTML = '';
+  const letters = ['A', 'B', 'C', 'D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt' + (state.answers[state.idx] === i ? ' selected' : '');
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', state.answers[state.idx] === i ? 'true' : 'false');
+    btn.innerHTML = `<span class="tag">${letters[i]}</span><span>${escHtml(opt)}</span>`;
+    btn.addEventListener('click', () => {
+      state.answers[state.idx] = i;
+      renderQuestion();
+    });
+    optWrap.appendChild(btn);
+  });
+
+  const isLast = state.idx === QUESTIONS.length - 1;
+  $('#btn-prev').style.visibility = state.idx === 0 ? 'hidden' : 'visible';
+  $('#btn-next').textContent = isLast ? '提交測驗' : '下一題';
+  $('#btn-next').disabled = state.answers[state.idx] === null;
+}
+
+$('#btn-prev').addEventListener('click', () => {
+  if (state.idx > 0) { state.idx--; renderQuestion(); }
+});
+
+$('#btn-next').addEventListener('click', () => {
+  if (state.answers[state.idx] === null) return;
+  if (state.idx < QUESTIONS.length - 1) {
+    state.idx++;
+    renderQuestion();
+  } else {
+    submitQuiz();
+  }
+});
+
+// ============================================================
+//  提交測驗 → Apps Script
+// ============================================================
+async function submitQuiz() {
+  const durationSec = Math.round((Date.now() - state.startTime) / 1000);
+  const payload = {
+    name: state.name,
+    employeeId: state.employeeId,
+    answers: state.answers,
+    durationSec: durationSec
+  };
+  state.lastPayload = payload;
+  showScreen('screen-submitting');
+  await sendToAppsScript(payload);
+}
+
+async function sendToAppsScript(payload) {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // Apps Script 需要 text/plain 以避免 CORS preflight
+      body: JSON.stringify(payload),
+      redirect: 'follow'
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.error || '伺服器回傳錯誤');
+
+    renderResult(data);
+    showScreen('screen-result');
+
+  } catch (err) {
+    console.error('提交失敗:', err);
+    $('#error-msg').textContent = `提交成績時發生問題（${err.message}），請確認網路連線後重試。`;
+    showScreen('screen-error');
+  }
+}
+
+$('#btn-retry').addEventListener('click', async () => {
+  if (state.lastPayload) {
+    showScreen('screen-submitting');
+    await sendToAppsScript(state.lastPayload);
+  }
+});
+
+// ============================================================
+//  結果畫面（由後端回傳資料驅動）
+// ============================================================
+function renderResult(data) {
+  const { score, total, passed, completedAt, questionResults } = data;
+  const letters = ['A', 'B', 'C', 'D'];
+
+  $('#res-score').innerHTML = `${score}<span>/${total}</span>`;
+  const passEl = $('#res-pass');
+  passEl.textContent = passed ? `通過 (≥80%)` : `未達通過標準 (≥80%)`;
+  passEl.className = 'result-pass ' + (passed ? 'pass-yes' : 'pass-no');
+  $('#res-meta').textContent = `完成時間：${completedAt}`;
+
+  const reviewWrap = $('#res-review');
+  reviewWrap.innerHTML = '';
+
+  questionResults.forEach((r, i) => {
+    const q = QUESTIONS[i];
+    const userAnsLabel = r.userAnswer !== null && r.userAnswer !== undefined
+      ? `${letters[r.userAnswer]}. ${q.options[r.userAnswer]}`
+      : '未作答';
+    const correctAnsLabel = `${letters[r.correctAnswer]}. ${q.options[r.correctAnswer]}`;
+
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `
+      <p class="review-q">
+        <span class="ic">${r.isCorrect ? '✅' : '❌'}</span>
+        ${i + 1}. ${escHtml(q.text)}
+      </p>
+      <div class="review-detail">
+        您的答案：<b>${escHtml(userAnsLabel)}</b><br>
+        正確答案：<b>${escHtml(correctAnsLabel)}</b>
+        <div class="explain">${escHtml(r.explain)}</div>
+      </div>`;
+    reviewWrap.appendChild(div);
+  });
+}
+
+// ============================================================
+//  重新測驗
+// ============================================================
+$('#btn-restart').addEventListener('click', () => {
+  $('#inp-name').value = '';
+  $('#inp-id').value = '';
+  $('#start-err').textContent = '';
+  state = {
+    name: '', employeeId: '',
+    idx: 0,
+    answers: new Array(QUESTIONS.length).fill(null),
+    startTime: null,
+    lastPayload: null
+  };
+  showScreen('screen-start');
+});
+
+// ============================================================
+//  初始化
+// ============================================================
+showScreen('screen-start');
+</script>
+</body>
+</html>
